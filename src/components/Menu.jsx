@@ -6,7 +6,7 @@ const Menu = ({ onStartGame, onJoinGame }) => {
   return (
     <div className="menu-overlay">
       <div className="menu-container">
-        <h1 className="neon-title">Neon Infinity XOX</h1>
+        <h1 className="neon-title">ANU XOX</h1>
         
         <div className="menu-options">
           <button className="menu-btn" onClick={() => onStartGame('ai')}>

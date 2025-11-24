@@ -1,10 +1,22 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 
-const WinModal = ({ winner, onRestart, isDraw }) => {
+const WinModal = ({ winner, onRestart, isDraw, playerRole, gameMode }) => {
+  const isWin = winner === playerRole;
+  const isLocal = gameMode === 'local';
+  
+  let message = '';
+  if (isDraw) {
+    message = 'DRAW!';
+  } else if (isLocal) {
+    message = `${winner} WINS!`;
+  } else {
+    message = isWin ? 'YOU WON!' : 'YOU LOST!';
+  }
+
   useEffect(() => {
-    if (winner) {
-      // Confetti effect
+    if (winner && (isWin || isLocal)) {
+      // Confetti effect only for winner or local games
       const duration = 3000;
       const end = Date.now() + duration;
 
@@ -30,12 +42,12 @@ const WinModal = ({ winner, onRestart, isDraw }) => {
       };
       frame();
     }
-  }, [winner]);
+  }, [winner, isWin, isLocal]);
 
   return (
     <div className="win-modal-overlay">
-      <div className={`win-modal ${winner ? 'win' : 'draw'}`}>
-        <h2>{winner ? `${winner} WINS!` : 'DRAW!'}</h2>
+      <div className={`win-modal ${isDraw ? 'draw' : (isWin || isLocal ? 'win' : 'loss')}`}>
+        <h2>{message}</h2>
         <div className="modal-actions">
           <button className="reset-btn" onClick={onRestart}>
             Play Again

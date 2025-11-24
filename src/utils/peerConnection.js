@@ -35,12 +35,27 @@ export const hostGame = (onConnection, onData) => {
   if (!peer) return;
 
   peer.on('connection', (c) => {
+    // Enforce max 1 opponent
+    if (conn && conn.open) {
+      console.log('Rejecting connection: Room full');
+      c.on('open', () => {
+        c.send({ type: 'ERROR', message: 'Room is full' });
+        setTimeout(() => c.close(), 500);
+      });
+      return;
+    }
+
     conn = c;
     console.log('Connected to: ' + conn.peer);
     if (onConnection) onConnection(conn);
 
     conn.on('data', (data) => {
       if (onData) onData(data);
+    });
+    
+    conn.on('close', () => {
+      console.log('Opponent disconnected');
+      conn = null;
     });
   });
 };

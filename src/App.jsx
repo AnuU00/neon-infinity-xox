@@ -122,8 +122,22 @@ function App() {
         setStatusMsg(`Waiting for opponent... Share ID: ${id}`);
         hostGame((connection) => {
           setConn(connection);
-          setStatusMsg('Opponent Connected!');
-          setPlayerRole('X');
+          
+          // Random Role Assignment
+          const isHostX = Math.random() < 0.5;
+          const hostRole = isHostX ? 'X' : 'O';
+          const joinerRole = isHostX ? 'O' : 'X';
+          
+          setPlayerRole(hostRole);
+          setStatusMsg(`Connected! You are ${hostRole}`);
+          
+          // Send start message to joiner
+          setTimeout(() => {
+             if (connection.open) {
+               connection.send({ type: 'START', role: joinerRole });
+             }
+          }, 500);
+          
         }, handleDataRef.current);
       }, (err) => {
         setStatusMsg(`Error: ${err.type}`);
@@ -139,8 +153,8 @@ function App() {
     initializePeer(() => {
       joinGame(hostId, (connection) => {
         setConn(connection);
-        setStatusMsg('Connected to Host!');
-        setPlayerRole('O');
+        setStatusMsg('Connected! Waiting for role...');
+        // Role will be set when START message is received
       }, handleDataRef.current, (err) => {
          setStatusMsg(`Connection Failed: ${err.message || err.type}`);
          setTimeout(() => setGameState('menu'), 3000);
@@ -273,8 +287,17 @@ function App() {
       }
       setBoard(newBoard);
       setIsXNext(player !== 'X');
+    } else if (data.type === 'START') {
+      setPlayerRole(data.role);
+      setStatusMsg(`Game Started! You are ${data.role}`);
     } else if (data.type === 'RESTART') {
       resetGameLocal();
+    } else if (data.type === 'ERROR') {
+      setStatusMsg(`Error: ${data.message}`);
+      setTimeout(() => {
+        setGameState('menu');
+        setConn(null);
+      }, 3000);
     }
   };
 
@@ -315,7 +338,7 @@ function App() {
 
       {gameState !== 'menu' && (
         <>
-          <h1 className="neon-title">Neon Infinity XOX</h1>
+          <h1 className="neon-title">ANU XOX</h1>
           
           <div className="status">
             {gameMode.startsWith('p2p') && (
@@ -357,6 +380,8 @@ function App() {
         <WinModal 
           winner={winner} 
           onRestart={resetGame} 
+          playerRole={playerRole}
+          gameMode={gameMode}
         />
       )}
     </div>
