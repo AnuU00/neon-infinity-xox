@@ -3,12 +3,29 @@ import Peer from 'peerjs';
 let peer = null;
 let conn = null;
 
-export const initializePeer = (onOpen) => {
-  peer = new Peer();
+export const initializePeer = (onOpen, onError) => {
+  // Ensure we don't create multiple peers
+  if (peer) {
+    if (peer.open) {
+      if (onOpen) onOpen(peer.id);
+      return peer;
+    } else {
+      peer.destroy();
+    }
+  }
+
+  peer = new Peer(null, {
+    debug: 2
+  });
   
   peer.on('open', (id) => {
     console.log('My peer ID is: ' + id);
     if (onOpen) onOpen(id);
+  });
+
+  peer.on('error', (err) => {
+    console.error('PeerJS Error:', err);
+    if (onError) onError(err);
   });
 
   return peer;
@@ -28,10 +45,13 @@ export const hostGame = (onConnection, onData) => {
   });
 };
 
-export const joinGame = (hostId, onOpen, onData) => {
+export const joinGame = (hostId, onOpen, onData, onError) => {
   if (!peer) return;
 
-  conn = peer.connect(hostId);
+  console.log('Connecting to host:', hostId);
+  conn = peer.connect(hostId, {
+    reliable: true
+  });
 
   conn.on('open', () => {
     console.log('Connected to host');
@@ -40,6 +60,17 @@ export const joinGame = (hostId, onOpen, onData) => {
 
   conn.on('data', (data) => {
     if (onData) onData(data);
+  });
+
+  conn.on('error', (err) => {
+    console.error('Connection Error:', err);
+    if (onError) onError(err);
+  });
+  
+  // Handle connection close
+  conn.on('close', () => {
+    console.log('Connection closed');
+    if (onError) onError(new Error('Connection closed'));
   });
 };
 

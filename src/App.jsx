@@ -115,30 +115,38 @@ function App() {
       setGameState('playing');
       setPlayerRole('X'); // Default for local/AI
     } else if (mode === 'p2p-host') {
+      setGameState('playing'); // Show board and status immediately
       setStatusMsg('Initializing Host...');
       initializePeer((id) => {
         setPeerId(id);
         setStatusMsg(`Waiting for opponent... Share ID: ${id}`);
         hostGame((connection) => {
           setConn(connection);
-          setGameState('playing');
           setStatusMsg('Opponent Connected!');
           setPlayerRole('X');
-        }, handleData);
+        }, handleDataRef.current);
+      }, (err) => {
+        setStatusMsg(`Error: ${err.type}`);
       });
     }
   };
 
   const joinOnlineGame = (hostId) => {
+    if (!hostId) return;
     setGameMode('p2p-join');
+    setGameState('playing'); // Show board and status immediately
     setStatusMsg('Connecting to host...');
     initializePeer(() => {
       joinGame(hostId, (connection) => {
         setConn(connection);
-        setGameState('playing');
         setStatusMsg('Connected to Host!');
         setPlayerRole('O');
-      }, handleData);
+      }, handleDataRef.current, (err) => {
+         setStatusMsg(`Connection Failed: ${err.message || err.type}`);
+         setTimeout(() => setGameState('menu'), 3000);
+      });
+    }, (err) => {
+      setStatusMsg(`Init Error: ${err.type}`);
     });
   };
 
@@ -332,6 +340,15 @@ function App() {
           
           <button className="reset-btn" onClick={resetGame}>
             Restart Game
+          </button>
+          
+          <button className="reset-btn" style={{marginLeft: '1rem', borderColor: '#f0f'}} onClick={() => {
+            setGameState('menu');
+            destroyPeer();
+            setPeerId(null);
+            setConn(null);
+          }}>
+            Return to Menu
           </button>
         </>
       )}
