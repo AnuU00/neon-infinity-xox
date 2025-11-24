@@ -262,6 +262,7 @@ function App() {
   handleDataRef.current = (data) => {
     if (data.type === 'MOVE') {
       const { index, player } = data;
+      // Use stateRef to get the LATEST state, avoiding stale closures
       const { board, xMoves, oMoves } = stateRef.current;
       
       const newBoard = [...board];
@@ -290,12 +291,16 @@ function App() {
     } else if (data.type === 'START') {
       setPlayerRole(data.role);
       setStatusMsg(`Game Started! You are ${data.role}`);
+      // Ensure we are in playing state
+      setGameState('playing');
     } else if (data.type === 'RESTART') {
       resetGameLocal();
     } else if (data.type === 'ERROR') {
       setStatusMsg(`Error: ${data.message}`);
       setTimeout(() => {
         setGameState('menu');
+        destroyPeer();
+        setPeerId(null);
         setConn(null);
       }, 3000);
     }
